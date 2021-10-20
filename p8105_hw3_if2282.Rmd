@@ -19,7 +19,7 @@ The dataset for Instacart contains `r ncol(instacart)` variables and `r nrow(ins
 
 
 #### How many aisles are there, and which aisles are the most items ordered from?
-There are a total of `r instacart %>% pull(aisle_id) %>% n_distinct()` aisles, with the `r instacart %>% count(aisle, sort = TRUE) %>% slice(1) %>% pull(aisle)` aisle being the one with the most items ordered, 
+There are a total of `r instacart %>% pull(aisle_id) %>% n_distinct()` aisles, with the `r instacart %>% count(aisle, sort = TRUE) %>% slice(1:3) %>% pull(aisle)` aisle being the three with the most items ordered. 
 
 #### Make a plot that shows the number of items ordered in each aisle, limiting this to aisles with more than 10000 items ordered. Arrange aisles sensibly, and organize your plot so others can read it.
 ```{r, message=FALSE}
@@ -36,7 +36,9 @@ instacart %>%
         axis.title.x = element_text(face = "bold", size = 12),
         axis.title.y = element_text(face = "bold", size = 12))
 ```
-The plot above gives the aisle names by the number of items ordered from that specific aisle. We can see that the `fresh vegetables` and `fresg fruits` aisle has the greatest number of items ordered on instacart. The aisle for `butter` and `oil vinegars` has the least number of orders. The data is arranged in descending order for reader accessibility listing aisles from most ordered to least. 
+
+*Description:*
+The plot above gives the aisle names by the number of items ordered from that specific aisle. We can see that the `fresh vegetables` and `fresh fruits` aisle has the greatest number of items ordered on instacart. The aisle for `butter` and `oil vinegars` has the least number of orders. The data is arranged in descending order for reader accessibility listing aisles from most items ordered to least. 
 
 
 
@@ -50,7 +52,9 @@ instacart %>%
   slice(1:3) %>%
   knitr::kable()
 ```
-The table above shows the three most ordered products from the `baking ingredients`, `dog food care` and `packaged vegetables fruits` aisles. The most ordered product from the list being `organic baby spinach` from the `packaged vegetables fruits` aisle which has been ordered `3,324` times. Among the 9 listed items, the least ordered item is the `Original Dry Dog` from the `dog food care`.  
+
+*Description:*
+The table above shows the three most ordered products from the `baking ingredients`, `dog food care` and `packaged vegetables fruits` aisles. The most ordered product from the list being `organic baby spinach` from the `packaged vegetables fruits` aisle which has been ordered `3,324` times. Among the 9 listed items, the least ordered item is the `Original Dry Dog` from the `dog food care` which has been ordered `9` times. 
 
 
 #### Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
@@ -69,7 +73,9 @@ apple_coffee %>%
   ) %>%
   knitr::kable(digits = 1)
 ```
-Based on the table above, we can see that `Pink Lady Apples` are usually ordered early afternoon around 12pm on most days with the exception of `Wednesday` and `Friday` where it is ordered around 2pm. `Coffee Ice Cream` on the other hand is ordered mostly around 3pm (generally when the temperature is high), with the exception of `Friday` to `Sunday` where it is ordered a couple of hours earlier. 
+
+*Description:*
+Based on the table above, we can see that `Pink Lady Apples` are usually ordered early afternoon around 11-12pm on most days with the exception of `Wednesday` and `Friday` where it is ordered around 2pm. `Coffee Ice Cream` on the other hand is ordered mostly around 2-3pm (generally when the temperature is high), with the exception of `Friday` to `Sunday` where it is ordered a couple of hours earlier. 
 
 # Problem 2:
 
@@ -79,6 +85,7 @@ data("brfss_smart2010")
 
 brfss = brfss_smart2010 %>%
   janitor::clean_names() %>%
+  rename(state = locationabbr) %>%
   filter(topic == "Overall Health" & response != "Don't Know/Not Sure" & response != "Refused") %>%
   mutate(response = factor(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
 ```
@@ -86,11 +93,91 @@ brfss = brfss_smart2010 %>%
 
 #### In 2002, which states were observed at 7 or more locations? What about in 2010?
 ```{r}
+state02 = brfss %>%
+  filter(year == 2002) %>%
+  group_by(state, locationdesc) %>%
+  summarize(num = n()) 
 
+state02 %>%
+  group_by(state) %>%
+  summarize(locations = n()) %>%
+  filter(locations >= 7) %>%
+  knitr::kable()
+```
+
+*Description:*
+There were 6 states that were observed in 7 or more locations in 2002 - `Connecticut`, `Florida`, `Massachussetts`, `North Carolina`, `New Jersey` and `Pennsylvania`.
+
+```{r}
+state10 = brfss %>%
+  filter(year == 2010) %>%
+  group_by(state, locationdesc) %>%
+  summarize(num = n()) 
+
+state10 %>%
+  group_by(state) %>%
+  summarize(locations = n()) %>%
+  filter(locations >= 7) %>%
+  knitr::kable()
+```
+
+*Description:*
+There were 14 states that were observed in 7 or more locations in 2010 - `California`, `Colorado`,  `Florida`, `Massachussetts`, `Maryland`, `North Carolina`, `Nebraska`, `New Jersey`, `New York`, `Ohio`, `Pennsylvania`, `South Carolina`, `Texas` and `Washington`. 
+
+
+#### Construct a dataset that is limited to Excellent responses, and contains, year, state, and a variable that averages the data_value across locations within a state. Make a “spaghetti” plot of this average value over time within a state.
+```{r, message = FALSE, warning = FALSE}
+excellent = brfss %>%
+  filter(response == "Excellent") %>%
+  select(year, state, data_value) %>%
+  group_by(year, state) %>%
+  summarize(
+    avg_data = mean(data_value, na.rm = TRUE)
+  )
+
+excellent %>%
+  ggplot(aes(x = year, y = avg_data, color = state)) +
+  geom_line() + 
+  labs(
+    title = "Average data value from 2002-2010 in 51 states",
+    x = "Year",
+    y = "Average Data Value"
+  ) 
+```
+
+*Description:*
+
+
+#### Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+```{r}
+brfss %>%
+  filter(state == "NY", year  %in% c("2006", "2010")) %>%
+  ggplot(aes(x = response, y = data_value, group = locationdesc, color = locationdesc)) + 
+  geom_line() +
+  facet_grid(. ~ year) + 
+  labs(
+    title = "Average data value from 2002-2010 in 51 states",
+    x = "Year",
+    y = "Average Data Value"
+  ) + 
+  scale_color_viridis_d() +
+  theme_minimal()
+```
+
+*Description:*
+We see a similar average value trend for both years; 2006 and 2010. The average data values for `Poor` response is lowest while `Good` and `Very good` show higher average data values. Since there were more locations included in 2010 as compared to 2006, we see more data lines in the 2010 panel. 
+
+
+# Problem 3:
+
+```{r}
 
 ```
 
-
+pivot longer 1 - 1440
+names min
+values activ
+drop activ_ prefix
 
 ```{r}
 
@@ -102,14 +189,8 @@ brfss = brfss_smart2010 %>%
 
 ```
 
-```{r}
-
-```
 
 
-```{r}
-
-```
 
 
 ```{r}
