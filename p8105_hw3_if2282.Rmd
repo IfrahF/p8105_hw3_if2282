@@ -8,6 +8,7 @@ Starting assignment and loading data set:
 
 ```{r, message=FALSE}
 library(tidyverse)
+library(readxl)
 library(p8105.datasets)
 data("instacart")
 ```
@@ -171,28 +172,37 @@ We see a similar average value trend for both years; 2006 and 2010. The average 
 # Problem 3:
 
 ```{r}
+weekdays = c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
 
+accel = 
+  read_csv("accel_data.csv") %>%
+  pivot_longer(
+    activity.1:activity.1440,
+    names_to = "time_min",
+    names_prefix = "activity.",
+    values_to = "activity_count"
+  ) %>%
+  mutate(day_type = ifelse(day %in% weekdays, "Weekday", "Weekend")) 
 ```
 
-pivot longer 1 - 1440
-names min
-values activ
-drop activ_ prefix
-
-```{r}
-
-```
-
-
-
-```{r}
-
-```
-
-
-
+*Description:*
+The Accelerometer data set contains `r ncol(accel)` variables and `r nrow(accel)` observations. The variables included are `r colnames(accel)`. The data set contains information on `r accel %>% pull(week) %>% max()` weeks of data for as many as `r accel %>% pull(time_min) %>% max()` activities. 
 
 
 ```{r}
-
+accel %>%
+  group_by(week, day) %>%
+  summarize(
+    total_activity = sum(activity_count, na.rm = TRUE)
+  ) %>%
+  knitr::kable(digits = 0)
 ```
+
+*Description:*
+There are not any specific trends observed. However, 2 consecutive Saturdays for weeks `4` and `5` record the lowest activity count - it is possible that the accelerometer was not used those days. `Monday` generally shows the less physical activity with the exception to the Monday in week `2`. 
+
+```{r}
+accel %>%
+  ggplot(aes(x = time_min, y = activity_count, group = day, color = day)) + geom_line()
+```
+
