@@ -80,7 +80,7 @@ Based on the table above, we can see that `Pink Lady Apples` are usually ordered
 
 # Problem 2:
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(p8105.datasets)
 data("brfss_smart2010")
 
@@ -93,7 +93,7 @@ brfss = brfss_smart2010 %>%
 
 
 #### In 2002, which states were observed at 7 or more locations? What about in 2010?
-```{r}
+```{r, message=FALSE, warning=FALSE}
 state02 = brfss %>%
   filter(year == 2002) %>%
   group_by(state, locationdesc) %>%
@@ -109,7 +109,7 @@ state02 %>%
 *Description:*
 There were 6 states that were observed in 7 or more locations in 2002 - `Connecticut`, `Florida`, `Massachussetts`, `North Carolina`, `New Jersey` and `Pennsylvania`.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 state10 = brfss %>%
   filter(year == 2010) %>%
   group_by(state, locationdesc) %>%
@@ -147,10 +147,11 @@ excellent %>%
 ```
 
 *Description:*
+While we do not see a specific trend in data value in the spaghetti plot, we see that there are generally low average data values in the year `2005` followed by `2007`. There is no general increasing or decreasing trend and the graph is not very easy to interpret. 
 
 
 #### Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
-```{r}
+```{r, message=FALSE, warning=FALSE}
 brfss %>%
   filter(state == "NY", year  %in% c("2006", "2010")) %>%
   ggplot(aes(x = response, y = data_value, group = locationdesc, color = locationdesc)) + 
@@ -171,7 +172,7 @@ We see a similar average value trend for both years; 2006 and 2010. The average 
 
 # Problem 3:
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 weekdays = c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
 
 accel = 
@@ -182,14 +183,15 @@ accel =
     names_prefix = "activity.",
     values_to = "activity_count"
   ) %>%
+  mutate(time_min = as.numeric(time_min)) %>%
   mutate(day_type = ifelse(day %in% weekdays, "Weekday", "Weekend")) 
 ```
 
 *Description:*
-The Accelerometer data set contains `r ncol(accel)` variables and `r nrow(accel)` observations. The variables included are `r colnames(accel)`. The data set contains information on `r accel %>% pull(week) %>% max()` weeks of data for as many as `r accel %>% pull(time_min) %>% max()` activities. 
+The Accelerometer data set contains `r ncol(accel)` variables and `r nrow(accel)` observations. The variables included are `r colnames(accel)`. The data set contains information on `r accel %>% pull(week) %>% max()` weeks recording `activity counts` for all `accel %>% pull(time_min) %>% max()` minutes of the day. 
 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 accel %>%
   group_by(week, day) %>%
   summarize(
@@ -201,8 +203,17 @@ accel %>%
 *Description:*
 There are not any specific trends observed. However, 2 consecutive Saturdays for weeks `4` and `5` record the lowest activity count - it is possible that the accelerometer was not used those days. `Monday` generally shows the less physical activity with the exception to the Monday in week `2`. 
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 accel %>%
-  ggplot(aes(x = time_min, y = activity_count, group = day, color = day)) + geom_line()
+  ggplot(aes(x = time_min, y = activity_count, group = day, color = day)) + 
+  geom_line(alpha = 0.7) +
+  labs(
+    title = "Activity Count by Day",
+    x = "Hour of Day",
+    y = "Average Activity Count"
+  ) 
 ```
+
+*Description:*
+We see that there is very less activity in the first `250` minutes of the dat as well as the last `100` minutes of the day. That can be because of no activity due to sleep. Much of the activity is seen from `400-1300` minutes where the 63 year-old male had been working. 
 
